@@ -26,14 +26,9 @@ const configureBackend = callable<
 >("configure");
 export class CaretController {
   private readonly virtualKeyboard: SteamVirtualKeyboard;
-  private uiMode = EUIMode.Unknown;
   private uiModeRegistration: { unregister: () => void } | null = null;
   private readonly directionListener = (direction: Direction) => {
-    if (this.uiMode === EUIMode.Desktop) {
-      this.virtualKeyboard.typeSystemDirection(direction);
-    } else {
-      this.virtualKeyboard.typeDirection(direction);
-    }
+    this.virtualKeyboard.pressDirection(direction);
   };
   private started = false;
 
@@ -82,7 +77,6 @@ export class CaretController {
 
   private startUIModeTracking(): void {
     const applyMode = (mode: EUIMode): void => {
-      this.uiMode = mode;
       this.virtualKeyboard.setGamepadMode(mode !== EUIMode.Desktop);
     };
 

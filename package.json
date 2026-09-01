@@ -1,6 +1,6 @@
 {
   "name": "caret-control",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Move the text caret on Steam Deck with L1/R1 and the right stick.",
   "type": "module",
   "scripts": {

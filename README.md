@@ -30,7 +30,7 @@ The compiled frontend is written to `dist/index.js`. The packaging script create
 
 ## Permissions and implementation
 
-The plugin declares Decky's `_root` permission only to read the Steam Deck's physical controller reports from `/dev/hidraw*`. In Game Mode, caret movement is sent directly to the active Steam on-screen keyboard. In Desktop Mode, the plugin uses Steam's physical keyboard-state API so browser fields receive real arrow keys instead of text control codes. It does not install system packages or create services. While the Game Mode keyboard is open, it suppresses only the Gamepad UI events that correspond to enabled caret controls; D-pad and left-stick keyboard navigation remain available.
+The plugin declares Decky's `_root` permission only to read the Steam Deck's physical controller reports from `/dev/hidraw*`. Caret movement activates Steam's existing on-screen keyboard arrow keys through the same virtual gamepad button path used by built-in bindings such as R2 for Enter. Up and down reuse the shifted variants of the Left/Right arrow tiles. It does not install system packages or create services. While the Game Mode keyboard is open, it suppresses only the Gamepad UI events that correspond to enabled caret controls; D-pad and left-stick keyboard navigation remain available.
 
 ## License
 

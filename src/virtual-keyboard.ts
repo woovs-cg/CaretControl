@@ -2,6 +2,7 @@ import type { Direction } from "./input-controller";
 import type { PluginSettings } from "./settings";
 
 interface VirtualKeyboardComponent {
+  DispatchEventByDataKey: (key: string, pressed: boolean) => boolean;
   TypeKeyInternal: (event: { strKey: string; strKeycode?: string }) => void;
   m_keyboardDiv?: Node;
 }
@@ -27,7 +28,6 @@ type SteamGlobalWindow = Window & {
   SteamUIStore?: SteamUIStoreShape;
   SteamClient?: {
     Input?: {
-      ControllerKeyboardSetKeyState?: (key: number, pressed: boolean) => void;
       RegisterForControllerStateChanges?: (
         callback: (changes: ControllerStateChange[]) => void,
       ) => Unregisterable;
@@ -57,15 +57,9 @@ const DIRECTION_KEYS: Record<Direction, string> = {
   down: "ArrowDown",
 };
 
-const HID_DIRECTION_KEYS: Record<Direction, number> = {
-  right: 79,
-  left: 80,
-  down: 81,
-  up: 82,
-};
-
 const L1_MASK = 1 << 3;
 const R1_MASK = 1 << 2;
+const NAVIGATION_SUPPRESSION_MS = 120;
 
 const GAMEPAD_BUMPER_LEFT = 5;
 const GAMEPAD_BUMPER_RIGHT = 6;
@@ -74,6 +68,13 @@ const GAMEPAD_DIRECTION_BUTTONS: Partial<Record<number, Direction>> = {
   10: "down",
   11: "left",
   12: "right",
+};
+
+const ARROW_TILE_KEYS: Record<Direction, readonly [string, string]> = {
+  left: ["ArrowLeft", "ArrowUp"],
+  up: ["ArrowLeft", "ArrowUp"],
+  right: ["ArrowRight", "ArrowDown"],
+  down: ["ArrowRight", "ArrowDown"],
 };
 
 export interface VirtualKeyboardState {
@@ -88,6 +89,7 @@ export class SteamVirtualKeyboard {
   private controllerRegistration: Unregisterable | null = null;
   private controllerStates = new Map<number, ControllerStateChange>();
   private suppressedButtons = new Set<number>();
+  private suppressNavigationUntil: Partial<Record<Direction, number>> = {};
   private gamepadMode = true;
   private state: VirtualKeyboardState = {
     open: false,
@@ -119,32 +121,16 @@ export class SteamVirtualKeyboard {
     return this.state;
   }
 
-  typeDirection(direction: Direction): boolean {
+  pressDirection(direction: Direction): boolean {
     const component = this.component ?? this.findComponent(this.findKeyboardDom());
     if (!component) return false;
 
     try {
-      component.TypeKeyInternal({ strKey: DIRECTION_KEYS[direction] });
-      return true;
+      this.suppressNavigationUntil[direction] =
+        performance.now() + NAVIGATION_SUPPRESSION_MS;
+      return this.tapDirectionTile(component, direction);
     } catch (error) {
-      console.error("[Caret Control] Could not send direction to Steam keyboard", error);
-      return false;
-    }
-  }
-
-  typeSystemDirection(direction: Direction): boolean {
-    const input =
-      (this.eventDocument?.defaultView as SteamGlobalWindow | null)?.SteamClient?.Input ??
-      (window as SteamGlobalWindow).SteamClient?.Input;
-    if (!input?.ControllerKeyboardSetKeyState) return false;
-
-    try {
-      const key = HID_DIRECTION_KEYS[direction];
-      input.ControllerKeyboardSetKeyState(key, true);
-      input.ControllerKeyboardSetKeyState(key, false);
-      return true;
-    } catch (error) {
-      console.error("[Caret Control] Could not send a system arrow key", error);
+      console.error("[Caret Control] Could not press a Steam keyboard arrow", error);
       return false;
     }
   }
@@ -226,6 +212,7 @@ export class SteamVirtualKeyboard {
       const candidate = current.stateNode as Partial<VirtualKeyboardComponent> | undefined;
       if (
         candidate?.m_keyboardDiv === expectedDiv &&
+        typeof candidate.DispatchEventByDataKey === "function" &&
         typeof candidate.TypeKeyInternal === "function"
       ) {
         return candidate as VirtualKeyboardComponent;
@@ -286,7 +273,10 @@ export class SteamVirtualKeyboard {
     const direction = GAMEPAD_DIRECTION_BUTTONS[button];
     const shouldSuppress =
       event.type === "vgp_onbuttondown"
-        ? directBumper || (direction !== undefined && this.isControlledDirectionActive(direction))
+        ? directBumper ||
+          (direction !== undefined &&
+            (this.isControlledDirectionActive(direction) ||
+              (this.suppressNavigationUntil[direction] ?? 0) >= performance.now()))
         : directBumper || this.suppressedButtons.has(button);
     if (!shouldSuppress) return;
 
@@ -324,6 +314,42 @@ export class SteamVirtualKeyboard {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
+  }
+
+  private tapDataKey(component: VirtualKeyboardComponent, dataKey: string): boolean {
+    if (!component.DispatchEventByDataKey(dataKey, true)) return false;
+    component.DispatchEventByDataKey(dataKey, false);
+    return true;
+  }
+
+  private tapDirectionTile(
+    component: VirtualKeyboardComponent,
+    direction: Direction,
+  ): boolean {
+    const dataKey = DIRECTION_KEYS[direction];
+    if (this.eventDocument?.querySelector(`[data-key="${dataKey}"]`)) {
+      return this.tapDataKey(component, dataKey);
+    }
+
+    // Steam renders Left/Up and Right/Down as two-state tiles controlled by L2.
+    // Temporarily expose the requested state for the synchronous built-in key dispatch.
+    const tile = ARROW_TILE_KEYS[direction]
+      .map((key) => this.eventDocument?.querySelector<HTMLElement>(`[data-key="${key}"]`))
+      .find((candidate) => candidate !== null && candidate !== undefined);
+    if (!tile) return false;
+
+    const originalDataKey = tile.getAttribute("data-key");
+    if (!originalDataKey) return false;
+    tile.setAttribute("data-key", dataKey);
+    let pressed = false;
+    try {
+      pressed = component.DispatchEventByDataKey(dataKey, true);
+    } finally {
+      tile.setAttribute("data-key", originalDataKey);
+    }
+    if (!pressed) return false;
+    component.DispatchEventByDataKey(originalDataKey, false);
+    return true;
   }
 
 }
