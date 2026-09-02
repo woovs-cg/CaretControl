@@ -1,6 +1,6 @@
 {
   "name": "Caret Control",
-  "version": "0.7.0-beta.3",
+  "version": "0.7.0",
   "author": "WooVS",
   "flags": ["_root"],
   "api_version": 1

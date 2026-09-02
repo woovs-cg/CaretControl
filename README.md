@@ -5,8 +5,8 @@ Decky Loader plugin for moving the text caret while typing on Steam Deck.
 - The **left shoulder button** (L1, LB, or L) moves the caret left.
 - The **right shoulder button** (R1, RB, or R) moves the caret right.
 - The **right stick** on the active controller moves the caret in all four directions.
-- External controller support is experimental. Standard Linux gamepads are
-  supported, including Xbox-compatible and generic Bluetooth DirectInput devices.
+- Standard Linux gamepads are supported, including controllers exposed through
+  Bluetooth D-input and USB XInput modes.
 - Holding a bumper or the stick repeats the movement.
 - Input is enabled only while Steam's on-screen keyboard and its text target are active.
 - The original L1/R1 and right-stick navigation events are suppressed while caret controls are active, so an arrow key does not gain focus when the caret reaches a text boundary.
