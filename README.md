@@ -13,7 +13,7 @@ Decky Loader plugin for moving the text caret while typing on Steam Deck.
 
 1. Download a package from [Releases](https://github.com/woovs-cg/CaretControl/releases).
 2. In Decky Loader, enable Developer Mode and choose **Install Plugin from ZIP File**.
-3. Select `release/CaretControl-<version>.zip`.
+3. Select `CaretControl-<version>.zip`.
 4. Restart Steam once if Decky does not hot-reload the plugin.
 
 ## Permissions and implementation
