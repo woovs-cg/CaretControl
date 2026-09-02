@@ -21,7 +21,7 @@ python scripts/package_plugin.py
 
 The compiled frontend is written to `dist/index.js`. The packaging script creates a Decky-compatible ZIP with forward-slash paths in `release/`.
 
-## Install for testing
+## Installation
 
 1. Build and package the plugin using the commands above.
 2. In Decky Loader, enable Developer Mode and choose **Install Plugin from ZIP File**.
