@@ -11,23 +11,11 @@ Decky Loader plugin for moving the text caret while typing on Steam Deck.
 - Input is enabled only while Steam's on-screen keyboard and its text target are active.
 - The original L1/R1 and right-stick navigation events are suppressed while caret controls are active, so an arrow key does not gain focus when the caret reaches a text boundary.
 
-## Build and package
+## Installation
 
-Requirements: Node.js 16.14 or newer and pnpm 9.
-
-```sh
-pnpm install
-pnpm run build
-python scripts/package_plugin.py
-```
-
-The compiled frontend is written to `dist/index.js`. The packaging script creates a Decky-compatible ZIP with forward-slash paths in `release/`.
-
-## Install for testing
-
-1. Build and package the plugin using the commands above.
+1. Download a package from [Releases](https://github.com/woovs-cg/CaretControl/releases).
 2. In Decky Loader, enable Developer Mode and choose **Install Plugin from ZIP File**.
-3. Select `release/CaretControl-<version>.zip`.
+3. Select `CaretControl-<version>.zip`.
 4. Restart Steam once if Decky does not hot-reload the plugin.
 
 ## Permissions and implementation
