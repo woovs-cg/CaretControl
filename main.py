@@ -1,4 +1,4 @@
-"""Decky backend for reading Steam Deck controls and emitting arrow keys."""
+"""Decky backend for built-in and external Caret Control devices."""
 
 from __future__ import annotations
 
@@ -6,11 +6,20 @@ import asyncio
 import glob
 import os
 import select
+import sys
 import threading
 import time
 from typing import Any
 
 import decky
+
+# Decky loads main.py directly and does not guarantee that the plugin directory
+# is present in sys.path. Make sibling backend modules importable explicitly.
+PLUGIN_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+if PLUGIN_DIRECTORY not in sys.path:
+    sys.path.insert(0, PLUGIN_DIRECTORY)
+
+from evdev_input import EvdevControllerWorker
 
 
 STEAM_DECK_HID_ID = "0003:000028DE:00001205"
@@ -90,6 +99,7 @@ class ControllerWorker:
                 "controllerConnected": self.controller_path is not None,
                 "controllerPath": self.controller_path,
                 "directInputReady": self.keyboard_target_ready,
+                "inputSource": "Steam Deck HID and external Linux gamepads",
                 "keyboardDetected": self.keyboard_open,
                 "active": self._is_active_locked(),
                 "lastInput": self.last_input,
@@ -303,15 +313,21 @@ class ControllerWorker:
 
 class Plugin:
     worker: ControllerWorker | None = None
+    external_worker: EvdevControllerWorker | None = None
 
     async def _main(self) -> None:
-        self.worker = ControllerWorker(asyncio.get_running_loop())
+        event_loop = asyncio.get_running_loop()
+        self.worker = ControllerWorker(event_loop)
+        self.external_worker = EvdevControllerWorker(event_loop)
         self.worker.start()
+        self.external_worker.start()
         decky.logger.info("Caret Control backend loaded")
 
     async def _unload(self) -> None:
         if self.worker is not None:
             self.worker.stop()
+        if self.external_worker is not None:
+            self.external_worker.stop()
         decky.logger.info("Caret Control backend unloaded")
 
     async def configure(
@@ -323,14 +339,32 @@ class Plugin:
         if self.worker is None:
             return {"backendReady": False, "error": "Backend has not started"}
         self.worker.configure(settings, keyboard_open, keyboard_target_ready)
-        return self.worker.status()
+        if self.external_worker is not None:
+            self.external_worker.configure(settings, keyboard_open, keyboard_target_ready)
+        return self._status()
 
     async def get_status(self) -> dict[str, Any]:
         if self.worker is None:
             return {"backendReady": False, "error": "Backend has not started"}
-        return self.worker.status()
+        return self._status()
 
     async def test_key(self, direction: str) -> bool:
         if self.worker is None:
             return False
         return self.worker.test_key(direction)
+
+    def _status(self) -> dict[str, Any]:
+        if self.worker is None:
+            return {"backendReady": False, "error": "Backend has not started"}
+        status = self.worker.status()
+        if self.external_worker is None:
+            return status
+        external_status = self.external_worker.status()
+        status.update(external_status)
+        status["controllerConnected"] = bool(
+            status.get("controllerConnected")
+            or external_status.get("externalControllers")
+        )
+        if status.get("error") and external_status.get("externalControllers"):
+            status["error"] = external_status.get("externalError")
+        return status

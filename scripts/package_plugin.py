@@ -10,6 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_FOLDER = "CaretControl"
 REQUIRED_FILES = (
     Path("dist/index.js"),
+    Path("evdev_input.py"),
     Path("main.py"),
     Path("package.json"),
     Path("plugin.json"),

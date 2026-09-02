@@ -17,6 +17,13 @@ export interface BackendStatus {
   lastOutput?: string;
   inputEvents?: number;
   inputReports?: number;
+  inputSource?: string;
+  externalControllers?: string[];
+  externalControllerPaths?: string[];
+  externalLastInput?: string;
+  externalLastOutput?: string;
+  externalInputEvents?: number;
+  externalError?: string | null;
   error?: string | null;
 }
 

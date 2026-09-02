@@ -85,6 +85,16 @@ class ControllerWorkerTests(unittest.TestCase):
         self.assertEqual(self.worker.input_events, 1)
         self.assertEqual(self.taps, [])
 
+    def test_builtin_hid_remains_active_when_keyboard_is_ready(self) -> None:
+        self.worker.configure({}, True, True)
+        report = deck_report()
+        report[8] = backend.L1_MASK
+        self.worker._handle_report(bytes(report))
+
+        self.assertEqual(self.worker.last_input, "L1")
+        self.assertIn("Steam Deck HID", self.worker.status()["inputSource"])
+        self.assertEqual(self.taps, ["left"])
+
 
 if __name__ == "__main__":
     unittest.main()

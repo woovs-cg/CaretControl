@@ -30,7 +30,7 @@ function Content() {
         <PanelSectionRow>
           <ToggleField
             label="Enabled"
-            description="Move the text caret with Steam Deck controls"
+            description="Move the text caret with a connected controller"
             checked={settings.enabled}
             onChange={(enabled) => update({ enabled })}
           />
@@ -38,8 +38,8 @@ function Content() {
 
         <PanelSectionRow>
           <ToggleField
-            label="L1 / R1"
-            description="L1 moves left, R1 moves right"
+            label="Shoulder buttons"
+            description="L1/LB/L moves left; R1/RB/R moves right"
             checked={settings.bumpersEnabled}
             disabled={!settings.enabled}
             onChange={(bumpersEnabled) => update({ bumpersEnabled })}
