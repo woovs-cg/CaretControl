@@ -233,7 +233,10 @@ class EvdevControllerWorker:
         sysfs = f"/sys/class/input/{event_name}/device"
         name = self._read_text(f"{sysfs}/name") or event_name
         vendor = (self._read_text(f"{sysfs}/id/vendor") or "").lower()
-        if vendor == "28de" or "steam deck" in name.lower():
+        product = (self._read_text(f"{sysfs}/id/product") or "").lower()
+        # The built-in Deck controls already use the HID worker. Other Valve
+        # controllers must remain eligible for external gamepad input.
+        if (vendor == "28de" and product == "1205") or "steam deck" in name.lower():
             return None
 
         fd: int | None = None
