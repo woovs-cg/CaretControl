@@ -1,4 +1,4 @@
-# Caret Control
+<img src="https://github.com/woovs-cg/CaretControl/blob/main/CaretControl_wide.png" width="960">
 
 Decky Loader plugin for moving the text caret while typing on Steam Deck.
 
